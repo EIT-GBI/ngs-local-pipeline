@@ -6,7 +6,7 @@ process ALIGNMENT_BWA {
     path(ref_genome)
 
     output:
-    tuple val(meta), path("*.bam"), emit: bam
+    tuple val(meta), path("*.bam"), path("*.bam.bai"), emit: bam_bai
     tuple val(meta), path("*.alignment.log"), emit: log
     tuple val("${task.process}"), val('bwa'), eval('bwa --version 2>&1 | sed -e "s/bwa //g"'), emit: versions_bwa, topic: versions
     tuple val("${task.process}"), val('samtools'), eval('samtools --version 2>&1 | sed -e "s/samtools //g"'), emit: versions_samtools, topic: versions
