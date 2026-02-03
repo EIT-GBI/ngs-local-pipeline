@@ -1,0 +1,17 @@
+process BCF_CONSENSUS {
+    tag "${meta.id}"
+
+    input:
+    tuple val(meta), path(bcf), path(bcf_index)
+    path ref_genome
+
+    output:
+    tuple val(meta), path("*fna"), emit: consensus
+    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version 2>&1 | sed -e "s/bcftools //g"'), emit: versions_bcftools, topic: versions
+
+    script:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    bcftools consensus -f ${ref_genome} ${bcf} > ${prefix}.consensus.fna
+    """
+}
