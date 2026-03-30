@@ -1,5 +1,6 @@
 process BCF2VCF {
     tag "${meta.id}"
+    label 'bcftools'
 
     input:
     tuple val(meta), path(bcf), path(bcf_index)

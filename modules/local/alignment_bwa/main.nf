@@ -1,9 +1,11 @@
 process ALIGNMENT_BWA {
     tag "${meta.id}"
+    label 'process_high'
+    label 'bwa_samtools'
 
     input:
     tuple val(meta), path(reads)
-    path(ref_genome)
+    tuple path(ref_genome), path("bwa_index")
 
     output:
     tuple val(meta), path("*.bam"), path("*.bam.bai"), emit: bam_bai
@@ -14,12 +16,13 @@ process ALIGNMENT_BWA {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def bwa_index_prefix = ref_genome.baseName
     """
-    bwa mem -t $task.cpu \
-    $ref_genome ${reads[0]} ${reads[1]} 2>>${prefix}.alignment.log \
-  | samtools view -@ $task.cpu -bS - 2>>${prefix}.alignment.log \
-  | samtools sort -@ $task.cpu \
+    bwa mem -t $task.cpus \
+    bwa_index/${bwa_index_prefix} ${reads[0]} ${reads[1]} 2>>${prefix}.alignment.log \
+  | samtools view -@ $task.cpus -bS - 2>>${prefix}.alignment.log \
+  | samtools sort -@ $task.cpus \
        -o ${prefix}.sorted.bam - >>${prefix}.alignment.log 2>&1
-    samtools index -@ $task.cpu ${prefix}.sorted.bam >>${prefix}.alignment.log 2>&1
+    samtools index -@ $task.cpus ${prefix}.sorted.bam >>${prefix}.alignment.log 2>&1
     """
 }

@@ -1,5 +1,6 @@
 process BCF2CSV {
     tag "${meta.id}"
+    label 'bcftools'
 
     input:
     tuple val(meta), path(bcf), path(bcf_index)
@@ -14,9 +15,11 @@ process BCF2CSV {
     bcftools query \
     -f '%CHROM,%POS,%REF,%ALT,%DP,[%AD],%QUAL,%FILTER\n' \
     ${bcf} > ${prefix}.calls.csv
-    sed -i.bak '1i\
-    CHROM,POS,REF,ALT,DP,AD(ref,alt),QUAL,FILTER
-    ' ${prefix}.calls.csv
+    {
+        printf 'CHROM,POS,REF,ALT,DP,AD(ref,alt),QUAL,FILTER\n'
+        cat ${prefix}.calls.csv
+    } > ${prefix}.calls.csv.tmp
+    mv ${prefix}.calls.csv.tmp ${prefix}.calls.csv
     """
 
 }

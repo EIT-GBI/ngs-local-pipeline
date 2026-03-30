@@ -1,6 +1,8 @@
 process FASTP {
     tag "${meta.id}"
+    label 'process_high'
     label 'process_medium'
+    label 'fastp'
 
     input:
     tuple val(meta), path(reads)
@@ -20,8 +22,8 @@ process FASTP {
     """
     fastp \\
     -w $task.cpus \\
-    -in1 ${reads[0]} \\
-    -in2 ${reads[1]} \\
+    -i ${reads[0]} \\
+    -I ${reads[1]} \\
     -o ${out_fq1} \\
     -O ${out_fq2} \\
     -h ${prefix}.fastp.html \\

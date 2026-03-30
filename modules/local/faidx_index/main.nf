@@ -1,5 +1,6 @@
 process FAIDX_INDEX {
     tag "${ref_genome.baseName}"
+    label 'samtools'
 
     input:
     path ref_genome

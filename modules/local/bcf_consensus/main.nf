@@ -1,9 +1,10 @@
 process BCF_CONSENSUS {
     tag "${meta.id}"
+    label 'bcftools'
 
     input:
     tuple val(meta), path(bcf), path(bcf_index)
-    path ref_genome
+    tuple path(ref_genome), path("${ref_genome}.fai")
 
     output:
     tuple val(meta), path("*fna"), emit: consensus

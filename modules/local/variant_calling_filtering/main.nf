@@ -1,15 +1,16 @@
 process VARIANT_CALLING_FILTERING {
     tag "${meta.id}"
+    label 'bcftools'
 
     input:
     tuple val(meta), path(bam), path(bai)
-    path ref_genome
+    tuple path(ref_genome), path("${ref_genome}.fai")
     val min_qmap
     val min_depth
     val min_qual
 
     output:
-    tuple val(meta), path("*.calls.bcf"). path("*.calls.bcf.csi"), emit: bcf_out
+    tuple val(meta), path("*.calls.bcf"), path("*.calls.bcf.csi"), emit: bcf_out
     tuple val(meta), path("*.variantcalling.log"), emit: bcf_log
     tuple val("${task.process}"), val('bcftools'), eval('bcftools --version 2>&1 | sed -e "s/bcftools //g"'), emit: versions_bcftools, topic: versions
 

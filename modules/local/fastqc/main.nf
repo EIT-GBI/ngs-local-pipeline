@@ -1,6 +1,8 @@
 process FASTQC {
     tag "${meta.id}"
+    label 'process_high'
     label 'process_medium'
+    label 'fastqc'
 
     input:
     tuple val(meta), path(reads)
