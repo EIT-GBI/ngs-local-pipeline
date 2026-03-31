@@ -20,9 +20,9 @@ workflow {
     main:
     // Reading samplesheet
     ch_samples = channel
-    .fromPath(params.samplesheet)
-    .splitCsv(header: true)
-    .map { row ->
+        .fromPath(params.samplesheet)
+        .splitCsv(header: true)
+        .map { row ->
         def id = row.sample_id
         def ref_genome = row.ref_genome
 
@@ -44,24 +44,19 @@ workflow {
     }
 
     // Separating reads from reference files
-    ch_reads = ch_samples.map { meta, reads, ref ->
+    ch_reads = ch_samples.map { meta, reads, _ref ->
         tuple(meta, reads)
     }
 
-    ch_refs = ch_samples.map { meta, reads, ref ->
+    ch_refs = ch_samples.map { meta, _reads, ref ->
         tuple(meta, ref)
     }
 
     // Making a channel with unique reference files (in case several samples have the same ref)
     refs_unique_ch = ch_refs
-    .map { meta, ref -> ref }
-    .unique()
+        .map { _meta, ref -> ref }
+        .unique()
 
-    ch_sample_reads_by_ref = ch_samples.map { meta, reads, ref ->
-        tuple(meta.ref_genome, meta, reads)
-    }
-
-    // need to take care of index
     // BWA index
     BWA_INDEX(refs_unique_ch)
     ch_bwa_index = BWA_INDEX.out.index
@@ -75,7 +70,7 @@ workflow {
     // FASTQC - Raw
     FASTQC_RAW(ch_reads)
 
-    // Trimning - Fastp
+    // Trimming - Fastp
     FASTP(ch_reads)
 
     // FASTQC - Trimmed
@@ -87,8 +82,8 @@ workflow {
         .combine(ch_bwa_index, by: 0)
 
     ALIGNMENT_BWA(
-        ch_alignment.map { ref_name, meta, reads, ref, bwa_index -> tuple(meta, reads) },
-        ch_alignment.map { ref_name, meta, reads, ref, bwa_index -> tuple(ref, bwa_index) }
+        ch_alignment.map { _ref_name, meta, reads, _ref, _bwa_index -> tuple(meta, reads) },
+        ch_alignment.map { _ref_name, _meta, _reads, ref, bwa_index -> tuple(ref, bwa_index) }
     )
 
     // Stats with Flagstat
@@ -104,8 +99,8 @@ workflow {
         .combine(ch_faidx_ref, by: 0)
 
     VARIANT_CALLING_FILTERING(
-        ch_variant_calling.map { ref_name, meta, bam, bai, ref, fai -> tuple(meta, bam, bai) },
-        ch_variant_calling.map { ref_name, meta, bam, bai, ref, fai -> tuple(ref, fai) },
+        ch_variant_calling.map { _ref_name, meta, bam, bai, _ref, _fai -> tuple(meta, bam, bai) },
+        ch_variant_calling.map { _ref_name, _meta, _bam, _bai, ref, fai -> tuple(ref, fai) },
         params.min_qmap,
         params.min_depth,
         params.min_qual
@@ -126,8 +121,8 @@ workflow {
         .combine(ch_faidx_ref, by: 0)
 
     BCF_CONSENSUS(
-        ch_consensus.map { ref_name, meta, bcf, bcf_index, ref, fai -> tuple(meta, bcf, bcf_index) },
-        ch_consensus.map { ref_name, meta, bcf, bcf_index, ref, fai -> tuple(ref, fai) }
+        ch_consensus.map { _ref_name, meta, bcf, bcf_index, _ref, _fai -> tuple(meta, bcf, bcf_index) },
+        ch_consensus.map { _ref_name, _meta, _bcf, _bcf_index, ref, fai -> tuple(ref, fai) }
     )
 
     // MultiQC
@@ -136,13 +131,13 @@ workflow {
     PARSE_ALIGNMENT_LOG(ALIGNMENT_BWA.out.log)
 
     ch_multiqc_files = channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_RAW.out.zip.collect             { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_TRIMMED.out.zip.collect         { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect                  { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FLAGSTAT.out[0].collect                 { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_STATS.out.stats.collect       { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_COVERAGE.out.coverage.collect { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect       { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_RAW.out.zip.collect             { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_TRIMMED.out.zip.collect         { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect                  { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FLAGSTAT.out[0].collect                 { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_STATS.out.stats.collect       { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_COVERAGE.out.coverage.collect { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect       { _meta, files -> files }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PARSE_ALIGNMENT_LOG.out.mqc.collect()               .ifEmpty([]))
 
     // Collect software versions from all upstream processes (not MULTIQC, to avoid deadlock)
@@ -154,7 +149,7 @@ workflow {
         .mix(FLAGSTAT.out.versions_samtools.first())
         .mix(VARIANT_CALLING_FILTERING.out.versions_bcftools.first())
         .mix(BCF2VCF.out.versions_tabix.first())
-        .map { process_name, tool, version -> "${tool}\t${version}" }
+        .map { _process_name, tool, version -> "${tool}\t${version}" }
         .collect()
     COLLECT_VERSIONS(ch_versions)
     ch_multiqc_files = ch_multiqc_files.mix(COLLECT_VERSIONS.out.mqc)
@@ -234,6 +229,3 @@ output {
         path 'qc/multiqc/'
     }
 }
-
-// Need index for bwa mem (bwt file). It is created using bwa index
-// For bcftools consensus, we need the samtools faidx for indexing
