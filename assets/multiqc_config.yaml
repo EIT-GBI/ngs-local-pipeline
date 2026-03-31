@@ -2,7 +2,8 @@ title: "NGS Sequencing Local Pipeline"
 subtitle: "Quality Control Report"
 intro_text: >
     This report aggregates QC metrics from all pipeline stages: raw and trimmed read
-    QC (FastQC, Fastp), alignment statistics (BWA mem, Samtools Flagstat).
+    QC (FastQC, Fastp), alignment statistics (BWA mem, Samtools Flagstat, Samtools Stats),
+    coverage (Samtools Coverage), and variant calling statistics (bcftools stats).
 
 export_plots: true
 disable_version_detection: true
@@ -15,6 +16,9 @@ extra_fn_clean_exts:
     - ".fastp"
     - ".flagstat"
     - ".sorted"
+    - ".coverage"
+    - ".calls"
+    - ".bcftools_stats"
     - type: regex
       pattern: "_S\\d+"
 
@@ -36,6 +40,16 @@ sp:
         fn: "*.fastp.json"
     samtools/flagstat:
         fn: "*.flagstat.txt"
+    samtools/stats:
+        fn: "*.stats"
+    samtools/coverage:
+        fn: "*.coverage.txt"
+    bcftools/stats:
+        fn: "*.bcftools_stats.txt"
+
+# Hide the per-region coverage plots (single contig bacterial genomes)
+remove_sections:
+    - samtools-coverage-section
 
 # Run only the modules relevant to this pipeline
 run_modules:
@@ -43,6 +57,7 @@ run_modules:
     - fastqc
     - fastp
     - samtools
+    - bcftools
 
 # Section ordering and FastQC raw/trimmed split via path_filters
 module_order:
@@ -62,6 +77,7 @@ module_order:
         path_filters:
             - "*.trimmed_fastqc.zip"
     - samtools
+    - bcftools
     - custom_content
 
 report_section_order:
@@ -73,8 +89,14 @@ report_section_order:
         order: 80
     samtools-flagstat:
         order: 70
+    samtools-stats:
+        order: 65
+    samtools-coverage:
+        order: 63
     bwa_alignment_stats:
         order: 60
+    bcftools-stats:
+        order: 50
     software_versions:
         order: -1000
 

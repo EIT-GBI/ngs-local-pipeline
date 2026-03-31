@@ -9,6 +9,9 @@ include { BCF2CSV } from './modules/local/bcf2csv'
 include { BCF_CONSENSUS } from './modules/local/bcf_consensus'
 include { BWA_INDEX } from './modules/local/bwa_index'
 include { FAIDX_INDEX } from './modules/local/faidx_index'
+include { SAMTOOLS_STATS } from './modules/local/samtools_stats'
+include { SAMTOOLS_COVERAGE } from './modules/local/samtools_coverage'
+include { BCFTOOLS_STATS } from './modules/local/bcftools_stats'
 include { MULTIQC } from './modules/local/multiqc'
 include { PARSE_ALIGNMENT_LOG } from './modules/local/parse_alignment_log'
 include { COLLECT_VERSIONS } from './modules/local/collect_versions'
@@ -91,6 +94,10 @@ workflow {
     // Stats with Flagstat
     FLAGSTAT(ALIGNMENT_BWA.out.bam_bai)
 
+    // Samtools stats and coverage
+    SAMTOOLS_STATS(ALIGNMENT_BWA.out.bam_bai)
+    SAMTOOLS_COVERAGE(ALIGNMENT_BWA.out.bam_bai)
+
     // Variant calling
     ch_variant_calling = ALIGNMENT_BWA.out.bam_bai
         .map { meta, bam, bai -> tuple(meta.ref_genome, meta, bam, bai) }
@@ -109,6 +116,9 @@ workflow {
 
     // Legacy-friendly CSV
     BCF2CSV(VARIANT_CALLING_FILTERING.out.bcf_out)
+
+    // Variant stats
+    BCFTOOLS_STATS(VARIANT_CALLING_FILTERING.out.bcf_out)
 
     // Consensus FASTA
     ch_consensus = VARIANT_CALLING_FILTERING.out.bcf_out
@@ -130,6 +140,9 @@ workflow {
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_TRIMMED.out.zip.collect         { it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect                  { it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FLAGSTAT.out[0].collect                 { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_STATS.out.stats.collect       { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_COVERAGE.out.coverage.collect { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect       { it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PARSE_ALIGNMENT_LOG.out.mqc.collect()               .ifEmpty([]))
 
     // Collect software versions from all upstream processes (not MULTIQC, to avoid deadlock)
@@ -162,8 +175,11 @@ workflow {
     ch_bcf_log          = VARIANT_CALLING_FILTERING.out.bcf_log
     ch_vcf              = BCF2VCF.out.vcf
     ch_csv              = BCF2CSV.out.csv
-    ch_consensus        = BCF_CONSENSUS.out.consensus
-    ch_multiqc_report   = MULTIQC.out.report
+    ch_samtools_stats    = SAMTOOLS_STATS.out.stats
+    ch_samtools_coverage = SAMTOOLS_COVERAGE.out.coverage
+    ch_bcftools_stats    = BCFTOOLS_STATS.out.stats
+    ch_consensus         = BCF_CONSENSUS.out.consensus
+    ch_multiqc_report    = MULTIQC.out.report
     ch_multiqc_data     = MULTIQC.out.data
 
 }
@@ -198,6 +214,15 @@ output {
     }
     ch_csv {
         path 'variants/csv/'
+    }
+    ch_samtools_stats {
+        path 'qc/samtools_stats/'
+    }
+    ch_samtools_coverage {
+        path 'qc/samtools_coverage/'
+    }
+    ch_bcftools_stats {
+        path 'qc/bcftools_stats/'
     }
     ch_consensus {
         path 'consensus/'
