@@ -80,7 +80,7 @@ workflow {
     // Alignment BWA - with filtering, sorting and indexing
     ch_alignment = FASTP.out.reads
         .map { meta, reads -> tuple(meta.ref_genome, meta, reads) }
-        .join(ch_bwa_index)
+        .combine(ch_bwa_index, by: 0)
 
     ALIGNMENT_BWA(
         ch_alignment.map { ref_name, meta, reads, ref, bwa_index -> tuple(meta, reads) },
@@ -93,7 +93,7 @@ workflow {
     // Variant calling
     ch_variant_calling = ALIGNMENT_BWA.out.bam_bai
         .map { meta, bam, bai -> tuple(meta.ref_genome, meta, bam, bai) }
-        .join(ch_faidx_ref)
+        .combine(ch_faidx_ref, by: 0)
 
     VARIANT_CALLING_FILTERING(
         ch_variant_calling.map { ref_name, meta, bam, bai, ref, fai -> tuple(meta, bam, bai) },
@@ -112,7 +112,7 @@ workflow {
     // Consensus FASTA
     ch_consensus = VARIANT_CALLING_FILTERING.out.bcf_out
         .map { meta, bcf, bcf_index -> tuple(meta.ref_genome, meta, bcf, bcf_index) }
-        .join(ch_faidx_ref)
+        .combine(ch_faidx_ref, by: 0)
 
     BCF_CONSENSUS(
         ch_consensus.map { ref_name, meta, bcf, bcf_index, ref, fai -> tuple(meta, bcf, bcf_index) },

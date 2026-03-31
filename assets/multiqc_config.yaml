@@ -11,12 +11,24 @@ disable_version_detection: true
 # samples display with the same name and line up in the General Stats table
 extra_fn_clean_exts:
     - ".trimmed"
-    - "_R1"
-    - "_R2"
     - "_001"
     - ".fastp"
     - ".flagstat"
     - ".sorted"
+    - type: regex
+      pattern: "_S\\d+"
+
+# Group R1/R2 under the same sample in the General Stats table
+# while keeping them as separate rows
+table_sample_merge:
+    "Read 1":
+        - "_R1"
+        - type: regex
+          pattern: "[_.-][rR]?1$"
+    "Read 2":
+        - "_R2"
+        - type: regex
+          pattern: "[_.-][rR]?2$"
 
 # Search pattern overrides to speed up file discovery
 sp:
@@ -64,9 +76,20 @@ report_section_order:
     bwa_alignment_stats:
         order: 60
 
-# Hide % duplicates from General Stats (not meaningful without dedup step)
+# General Stats: hide % duplicates (no dedup step) and fastp GC (redundant with FastQC)
 table_columns_visible:
     "FastQC (raw)":
         percent_duplicates: false
     "FastQC (trimmed)":
         percent_duplicates: false
+    Fastp:
+        pct_gc: false
+
+# Rename columns to clarify raw vs trimmed
+table_columns_name:
+    "FastQC (raw)":
+        percent_gc: "% GC (raw)"
+        total_sequences: "Seqs (raw)"
+    "FastQC (trimmed)":
+        percent_gc: "% GC (trimmed)"
+        total_sequences: "Seqs (trimmed)"
