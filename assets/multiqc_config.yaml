@@ -75,6 +75,8 @@ report_section_order:
         order: 70
     bwa_alignment_stats:
         order: 60
+    software_versions:
+        order: -1000
 
 # General Stats: hide % duplicates (no dedup step) and fastp GC (redundant with FastQC)
 table_columns_visible:

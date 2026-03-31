@@ -12,7 +12,7 @@ process VARIANT_CALLING_FILTERING {
     output:
     tuple val(meta), path("*.calls.bcf"), path("*.calls.bcf.csi"), emit: bcf_out
     tuple val(meta), path("*.variantcalling.log"), emit: bcf_log
-    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version 2>&1 | sed -e "s/bcftools //g"'), emit: versions_bcftools, topic: versions
+    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version | head -1 | sed "s/bcftools //"'), emit: versions_bcftools, topic: versions
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

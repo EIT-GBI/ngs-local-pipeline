@@ -11,6 +11,7 @@ include { BWA_INDEX } from './modules/local/bwa_index'
 include { FAIDX_INDEX } from './modules/local/faidx_index'
 include { MULTIQC } from './modules/local/multiqc'
 include { PARSE_ALIGNMENT_LOG } from './modules/local/parse_alignment_log'
+include { COLLECT_VERSIONS } from './modules/local/collect_versions'
 
 workflow {
     main:
@@ -130,6 +131,20 @@ workflow {
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect                  { it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FLAGSTAT.out[0].collect                 { it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PARSE_ALIGNMENT_LOG.out.mqc.collect()               .ifEmpty([]))
+
+    // Collect software versions from all upstream processes (not MULTIQC, to avoid deadlock)
+    // Map each tuple to "tool\tversion" string to prevent .collect() from flattening tuples
+    ch_versions = FASTQC_RAW.out.versions_fastqc.first()
+        .mix(FASTP.out.versions_fastp.first())
+        .mix(ALIGNMENT_BWA.out.versions_bwa.first())
+        .mix(ALIGNMENT_BWA.out.versions_samtools.first())
+        .mix(FLAGSTAT.out.versions_samtools.first())
+        .mix(VARIANT_CALLING_FILTERING.out.versions_bcftools.first())
+        .mix(BCF2VCF.out.versions_tabix.first())
+        .map { process_name, tool, version -> "${tool}\t${version}" }
+        .collect()
+    COLLECT_VERSIONS(ch_versions)
+    ch_multiqc_files = ch_multiqc_files.mix(COLLECT_VERSIONS.out.mqc)
 
     MULTIQC(
         ch_multiqc_files.collect(),

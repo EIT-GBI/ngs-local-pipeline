@@ -10,8 +10,8 @@ process ALIGNMENT_BWA {
     output:
     tuple val(meta), path("*.bam"), path("*.bam.bai"), emit: bam_bai
     tuple val(meta), path("*.alignment.log"), emit: log
-    tuple val("${task.process}"), val('bwa'), eval('bwa --version 2>&1 | sed -e "s/bwa //g"'), emit: versions_bwa, topic: versions
-    tuple val("${task.process}"), val('samtools'), eval('samtools --version 2>&1 | sed -e "s/samtools //g"'), emit: versions_samtools, topic: versions
+    tuple val("${task.process}"), val('bwa'), eval('bwa 2>&1 | sed -n "s/^Version: //p"'), emit: versions_bwa, topic: versions
+    tuple val("${task.process}"), val('samtools'), eval('samtools --version | head -1 | sed "s/samtools //"'), emit: versions_samtools, topic: versions
 
 
     script:

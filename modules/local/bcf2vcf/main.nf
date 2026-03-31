@@ -8,8 +8,8 @@ process BCF2VCF {
     output:
     tuple val(meta), path("*calls.vcf.gz"), emit: vcf
     tuple val(meta), path("*.vcf.log"), emit: cvf_log
-    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version 2>&1 | sed -e "s/bcftools //g"'), emit: versions_bcftools, topic: versions
-    tuple val("${task.process}"), val('tabix'), eval('tabix --version 2>&1 | sed -e "s/tabix //g"'), emit: versions_tabix, topic: versions
+    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version | head -1 | sed "s/bcftools //"'), emit: versions_bcftools, topic: versions
+    tuple val("${task.process}"), val('tabix'), eval('tabix --version 2>&1 | head -1 | sed "s/tabix //"'), emit: versions_tabix, topic: versions
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

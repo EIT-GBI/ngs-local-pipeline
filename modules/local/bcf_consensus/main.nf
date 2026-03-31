@@ -8,7 +8,7 @@ process BCF_CONSENSUS {
 
     output:
     tuple val(meta), path("*fna"), emit: consensus
-    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version 2>&1 | sed -e "s/bcftools //g"'), emit: versions_bcftools, topic: versions
+    tuple val("${task.process}"), val('bcftools'), eval('bcftools --version | head -1 | sed "s/bcftools //"'), emit: versions_bcftools, topic: versions
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
