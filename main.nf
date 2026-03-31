@@ -9,8 +9,11 @@ include { BCF2CSV } from './modules/local/bcf2csv'
 include { BCF_CONSENSUS } from './modules/local/bcf_consensus'
 include { BWA_INDEX } from './modules/local/bwa_index'
 include { FAIDX_INDEX } from './modules/local/faidx_index'
+include { MULTIQC } from './modules/local/multiqc'
+include { PARSE_ALIGNMENT_LOG } from './modules/local/parse_alignment_log'
 
 workflow {
+    main:
     // Reading samplesheet
     ch_samples = channel
     .fromPath(params.samplesheet)
@@ -116,8 +119,80 @@ workflow {
         ch_consensus.map { ref_name, meta, bcf, bcf_index, ref, fai -> tuple(ref, fai) }
     )
 
-    // MultiQC - probably need something specific for us
+    // MultiQC
+    ch_multiqc_config = file("${projectDir}/assets/multiqc_config.yaml")
 
+    PARSE_ALIGNMENT_LOG(ALIGNMENT_BWA.out.log)
+
+    ch_multiqc_files = channel.empty()
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_RAW.out.zip.collect             { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_TRIMMED.out.zip.collect         { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect                  { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FLAGSTAT.out[0].collect                 { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PARSE_ALIGNMENT_LOG.out.mqc.collect()               .ifEmpty([]))
+
+    MULTIQC(
+        ch_multiqc_files.collect(),
+        ch_multiqc_config
+    )
+
+    publish:
+    ch_fastqc_raw       = FASTQC_RAW.out.html.mix(FASTQC_RAW.out.zip)
+    ch_fastqc_trimmed   = FASTQC_TRIMMED.out.html.mix(FASTQC_TRIMMED.out.zip)
+    ch_fastp_qc         = FASTP.out.json.mix(FASTP.out.html).mix(FASTP.out.log)
+    ch_bam              = ALIGNMENT_BWA.out.bam_bai
+    ch_alignment_log    = ALIGNMENT_BWA.out.log
+    ch_flagstat         = FLAGSTAT.out[0]
+    ch_bcf              = VARIANT_CALLING_FILTERING.out.bcf_out
+    ch_bcf_log          = VARIANT_CALLING_FILTERING.out.bcf_log
+    ch_vcf              = BCF2VCF.out.vcf
+    ch_csv              = BCF2CSV.out.csv
+    ch_consensus        = BCF_CONSENSUS.out.consensus
+    ch_multiqc_report   = MULTIQC.out.report
+    ch_multiqc_data     = MULTIQC.out.data
+
+}
+
+output {
+    ch_fastqc_raw {
+        path 'qc/fastqc/raw/'
+    }
+    ch_fastqc_trimmed {
+        path 'qc/fastqc/trimmed/'
+    }
+    ch_fastp_qc {
+        path 'qc/fastp/'
+    }
+    ch_bam {
+        path 'alignment/'
+    }
+    ch_alignment_log {
+        path 'logs/alignment/'
+    }
+    ch_flagstat {
+        path 'qc/flagstat/'
+    }
+    ch_bcf {
+        path 'variants/bcf/'
+    }
+    ch_bcf_log {
+        path 'logs/variant_calling/'
+    }
+    ch_vcf {
+        path 'variants/vcf/'
+    }
+    ch_csv {
+        path 'variants/csv/'
+    }
+    ch_consensus {
+        path 'consensus/'
+    }
+    ch_multiqc_report {
+        path 'qc/multiqc/'
+    }
+    ch_multiqc_data {
+        path 'qc/multiqc/'
+    }
 }
 
 // Need index for bwa mem (bwt file). It is created using bwa index
