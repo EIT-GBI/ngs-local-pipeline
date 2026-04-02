@@ -1,22 +1,22 @@
-include { FASTQC as FASTQC_RAW } from './modules/local/fastqc'
-include { FASTQC as FASTQC_TRIMMED } from './modules/local/fastqc'
-include { FASTP } from './modules/local/fastp'
-include { ALIGNMENT_BWA } from './modules/local/alignment_bwa'
-include { FLAGSTAT } from './modules/local/flagstat'
+include { FASTQC as FASTQC_RAW      } from './modules/local/fastqc'
+include { FASTQC as FASTQC_TRIMMED  } from './modules/local/fastqc'
+include { FASTP                     } from './modules/local/fastp'
+include { ALIGNMENT_BWA             } from './modules/local/alignment_bwa'
+include { FLAGSTAT                  } from './modules/local/flagstat'
 include { VARIANT_CALLING_FILTERING } from './modules/local/variant_calling_filtering'
-include { BCF2VCF } from './modules/local/bcf2vcf'
-include { BCF2CSV } from './modules/local/bcf2csv'
-include { BCF_CONSENSUS } from './modules/local/bcf_consensus'
-include { BWA_INDEX } from './modules/local/bwa_index'
-include { FAIDX_INDEX } from './modules/local/faidx_index'
-include { SAMTOOLS_STATS } from './modules/local/samtools_stats'
-include { SAMTOOLS_COVERAGE } from './modules/local/samtools_coverage'
-include { BCFTOOLS_STATS } from './modules/local/bcftools_stats'
-include { BIGWIG } from './modules/local/bigwig'
-include { CHROM_SIZES } from './modules/local/chrom_sizes'
-include { MULTIQC } from './modules/local/multiqc'
-include { PARSE_ALIGNMENT_LOG } from './modules/local/parse_alignment_log'
-include { COLLECT_VERSIONS } from './modules/local/collect_versions'
+include { BCF2VCF                   } from './modules/local/bcf2vcf'
+include { BCF2CSV                   } from './modules/local/bcf2csv'
+include { BCF_CONSENSUS             } from './modules/local/bcf_consensus'
+include { BWA_INDEX                 } from './modules/local/bwa_index'
+include { FAIDX_INDEX               } from './modules/local/faidx_index'
+include { SAMTOOLS_STATS            } from './modules/local/samtools_stats'
+include { SAMTOOLS_COVERAGE         } from './modules/local/samtools_coverage'
+include { BCFTOOLS_STATS            } from './modules/local/bcftools_stats'
+include { BIGWIG                    } from './modules/local/bigwig'
+include { CHROM_SIZES               } from './modules/local/chrom_sizes'
+include { MULTIQC                   } from './modules/local/multiqc'
+include { PARSE_ALIGNMENT_LOG       } from './modules/local/parse_alignment_log'
+include { COLLECT_VERSIONS          } from './modules/local/collect_versions'
 
 workflow {
     main:
@@ -148,14 +148,14 @@ workflow {
     PARSE_ALIGNMENT_LOG(ALIGNMENT_BWA.out.log)
 
     ch_multiqc_files = channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_RAW.out.zip.collect             { _meta, files -> files }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_TRIMMED.out.zip.collect         { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_RAW.out.zip.collect              { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_TRIMMED.out.zip.collect          { _meta, files -> files }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect                  { _meta, files -> files }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FLAGSTAT.out[0].collect                 { _meta, files -> files }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_STATS.out.stats.collect       { _meta, files -> files }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_COVERAGE.out.coverage.collect { _meta, files -> files }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect       { _meta, files -> files }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PARSE_ALIGNMENT_LOG.out.mqc.collect()               .ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_STATS.out.stats.collect        { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_COVERAGE.out.coverage.collect  { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect        { _meta, files -> files }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PARSE_ALIGNMENT_LOG.out.mqc.collect()                            .ifEmpty([]))
 
     // Collect software versions from all upstream processes (not MULTIQC, to avoid deadlock)
     // Map each tuple to "tool\tversion" string to prevent .collect() from flattening tuples
@@ -179,23 +179,23 @@ workflow {
     )
 
     publish:
-    ch_fastqc_raw       = FASTQC_RAW.out.html.mix(FASTQC_RAW.out.zip)
-    ch_fastqc_trimmed   = FASTQC_TRIMMED.out.html.mix(FASTQC_TRIMMED.out.zip)
-    ch_fastp_qc         = FASTP.out.json.mix(FASTP.out.html).mix(FASTP.out.log)
-    ch_bam              = ALIGNMENT_BWA.out.bam_bai
-    ch_alignment_log    = ALIGNMENT_BWA.out.log
-    ch_flagstat         = FLAGSTAT.out[0]
-    ch_bcf              = VARIANT_CALLING_FILTERING.out.bcf_out
-    ch_bcf_log          = VARIANT_CALLING_FILTERING.out.bcf_log
-    ch_vcf              = BCF2VCF.out.vcf
-    ch_csv              = BCF2CSV.out.csv
-    ch_samtools_stats    = SAMTOOLS_STATS.out.stats
-    ch_samtools_coverage = SAMTOOLS_COVERAGE.out.coverage
-    ch_bcftools_stats    = BCFTOOLS_STATS.out.stats
-    ch_bigwig            = BIGWIG.out.bigwig
-    ch_consensus         = BCF_CONSENSUS.out.consensus
-    ch_multiqc_report    = MULTIQC.out.report
-    ch_multiqc_data     = MULTIQC.out.data
+    ch_fastqc_raw           = FASTQC_RAW.out.html.mix(FASTQC_RAW.out.zip)
+    ch_fastqc_trimmed       = FASTQC_TRIMMED.out.html.mix(FASTQC_TRIMMED.out.zip)
+    ch_fastp_qc             = FASTP.out.json.mix(FASTP.out.html).mix(FASTP.out.log)
+    ch_bam                  = ALIGNMENT_BWA.out.bam_bai
+    ch_alignment_log        = ALIGNMENT_BWA.out.log
+    ch_flagstat             = FLAGSTAT.out[0]
+    ch_bcf                  = VARIANT_CALLING_FILTERING.out.bcf_out
+    ch_bcf_log              = VARIANT_CALLING_FILTERING.out.bcf_log
+    ch_vcf                  = BCF2VCF.out.vcf
+    ch_csv                  = BCF2CSV.out.csv
+    ch_samtools_stats       = SAMTOOLS_STATS.out.stats
+    ch_samtools_coverage    = SAMTOOLS_COVERAGE.out.coverage
+    ch_bcftools_stats       = BCFTOOLS_STATS.out.stats
+    ch_bigwig               = BIGWIG.out.bigwig
+    ch_consensus            = BCF_CONSENSUS.out.consensus
+    ch_multiqc_report       = MULTIQC.out.report
+    ch_multiqc_data         = MULTIQC.out.data
 
 }
 
