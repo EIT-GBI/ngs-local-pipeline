@@ -29,8 +29,16 @@ BCF2VCF + BCF2CSV + BCF_CONSENSUS → MULTIQC
 
 ## Running
 ```
-nextflow run main.nf -profile conda -resume
+nextflow run main.nf -profile conda -resume     # conda environments
+nextflow run main.nf -profile docker -resume    # Docker images (build first: ./containers/build.sh)
 ```
+
+## Containers (Docker)
+- Each conda label has a matching `container` in `conf/modules.config`; tags mirror the pinned versions
+- Dockerfiles live in `containers/<label>/` (micromamba base, installs the same bioconda spec)
+- `containers/base/` is the default image for label-less script steps (CHROM_SIZES, PARSE_ALIGNMENT_LOG)
+- `params.container_registry` (default `ngs-seq`) prefixes all image tags; build/push via `containers/build.sh`
+- conda is no longer globally enabled in `modules.config` — the active profile (`conda`/`docker`) decides
 
 ## Gotchas
 - `FLAGSTAT` main output has no `emit:` name — reference it as `FLAGSTAT.out[0]`

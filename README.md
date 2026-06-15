@@ -36,9 +36,12 @@ FASTQC (raw) → FASTP (trimming) → FASTQC (trimmed) → BWA MEM (alignment + 
 ## Requirements
 
 - [Nextflow](https://www.nextflow.io/) (>= 22.10)
-- Conda (environments are managed automatically via `conf/modules.config`)
+- **Either** Conda **or** Docker for dependency management (pick a profile when running)
 
-No manual tool installation needed — Nextflow creates conda environments for: FastQC, fastp, BWA, samtools, bcftools, bedtools, ucsc-bedGraphToBigWig, and MultiQC.
+No manual tool installation needed. Every tool (FastQC, fastp, BWA, samtools, bcftools,
+bedtools, ucsc-bedGraphToBigWig, MultiQC) is provided through:
+- conda environments (`-profile conda`), managed automatically via `conf/modules.config`, or
+- Docker images (`-profile docker`), one per tool — see [Docker](#docker).
 
 ## Input
 
@@ -66,6 +69,39 @@ nextflow run main.nf -profile conda -resume \
 
 Results will be published to `/path/to/output/my_analysis/`.
 
+### Docker
+
+The pipeline ships one Docker image per tool, built from the same pinned versions as the
+conda specs. Dockerfiles live under `containers/<tool>/`, plus a small `base` image for the
+label-less helper steps.
+
+**1. Build the images** (one-time, or whenever a tool version changes):
+
+```bash
+./containers/build.sh
+```
+
+This tags the images under the `ngs-seq/` namespace (e.g. `ngs-seq/fastqc:0.12.1`), matching
+`params.container_registry` in `nextflow.config`.
+
+**2. Run with the docker profile:**
+
+```bash
+nextflow run main.nf -profile docker -resume \
+    --samplesheet /path/to/samplesheet.csv \
+    --reads_dir /path/to/fastq/files \
+    --ref_dir /path/to/reference/genomes \
+    --publish_dir /path/to/output \
+    --analysis_name my_analysis
+```
+
+**Remote registry (e.g. GHCR).** To build, push, and run against a remote registry:
+
+```bash
+REGISTRY=ghcr.io/my-org/ngs-seq PUSH=1 ./containers/build.sh
+nextflow run main.nf -profile docker --container_registry ghcr.io/my-org/ngs-seq ...
+```
+
 ### Required parameters
 
 | Parameter         | Description                                      |
@@ -89,8 +125,10 @@ Results will be published to `/path/to/output/my_analysis/`.
 ```
 main.nf                        # Workflow definition and channel wiring
 modules/local/<tool>/main.nf   # One process per module
-conf/modules.config            # Conda envs and process labels
-nextflow.config                # Params and profiles
+conf/modules.config            # Conda envs, container images, and process labels
+nextflow.config                # Params and profiles (standard / conda / docker)
+containers/<tool>/Dockerfile   # One image per tool (mirrors the conda specs)
+containers/build.sh            # Build/push helper for the Docker images
 assets/samplesheet.csv         # Example samplesheet for testing
 assets/multiqc_config.yaml     # MultiQC report customisation
 ```
