@@ -22,8 +22,15 @@ process FASTQC {
     def fastqc_memory = memory_in_mb > 10000 ? 10000 : (memory_in_mb < 100 ? 100 : memory_in_mb)
 
     """
+    # Keep the JVM's temp/perfdata off the container's small /tmp (avoids SIGBUS
+    # under Apptainer on HPC); use the task work dir, which has space.
+    export TMPDIR="\$PWD/tmp"
+    mkdir -p "\$TMPDIR"
+    export _JAVA_OPTIONS="-Djava.io.tmpdir=\$TMPDIR -XX:-UsePerfData"
+
     fastqc \\
         ${args} \\
+        --dir "\$TMPDIR" \\
         --threads ${task.cpus} \\
         --memory ${fastqc_memory} \\
         ${reads}
