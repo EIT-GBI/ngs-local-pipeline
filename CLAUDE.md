@@ -29,16 +29,23 @@ BCF2VCF + BCF2CSV + BCF_CONSENSUS → MULTIQC
 
 ## Running
 ```
-nextflow run main.nf -profile conda -resume     # conda environments
-nextflow run main.nf -profile docker -resume    # Docker images (build first: ./containers/build.sh)
+nextflow run main.nf -profile conda -resume               # conda environments (local)
+nextflow run main.nf -profile docker -resume              # Docker images, local (build first: ./containers/build.sh)
+nextflow run main.nf -profile apptainer,slurm -resume     # HPC cluster (Apptainer + Slurm)
 ```
 
-## Containers (Docker)
+## Profiles
+- Profiles are composable: container runtime (`conda`/`docker`/`apptainer`) + executor (`slurm`)
+- `docker` and `apptainer` mutually disable each other; conda is NOT globally enabled — the active profile decides
+- `slurm` profile: `process.queue = { params.partition }`, `process.clusterOptions = { params.clusteropts }` (closures, null = cluster default)
+
+## Containers
 - Each conda label has a matching `container` in `conf/modules.config`; tags mirror the pinned versions
 - Dockerfiles live in `containers/<label>/` (micromamba base, installs the same bioconda spec)
 - `containers/base/` is the default image for label-less script steps (CHROM_SIZES, PARSE_ALIGNMENT_LOG)
-- `params.container_registry` (default `ngs-seq`) prefixes all image tags; build/push via `containers/build.sh`
-- conda is no longer globally enabled in `modules.config` — the active profile (`conda`/`docker`) decides
+- `params.container_registry` (default `ngs-seq`) prefixes all image tags; build/push via `containers/build.sh` (REGISTRY/PUSH env vars)
+- Apptainer auto-pulls each container via `docker://`, so on the cluster `--container_registry` MUST be a reachable registry with the images already pushed
+- Strict Nextflow config grammar: no `if` statements in config — use closures (`{ params.x }`) for param-driven directives
 
 ## Gotchas
 - `FLAGSTAT` main output has no `emit:` name — reference it as `FLAGSTAT.out[0]`

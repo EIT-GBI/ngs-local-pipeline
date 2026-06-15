@@ -102,6 +102,42 @@ REGISTRY=ghcr.io/my-org/ngs-seq PUSH=1 ./containers/build.sh
 nextflow run main.nf -profile docker --container_registry ghcr.io/my-org/ngs-seq ...
 ```
 
+### HPC cluster (Apptainer + Slurm)
+
+On the cluster, dependencies run via **Apptainer** and jobs are submitted through **Slurm**.
+The `apptainer` and `slurm` profiles are composable — combine them with `-profile apptainer,slurm`.
+
+Apptainer can't see images in a local Docker daemon, so it pulls each image via `docker://`
+from `--container_registry`. **That registry must be reachable from the cluster and already
+contain the images**, so build/push them first (from a machine with Docker):
+
+```bash
+REGISTRY=ghcr.io/my-org/ngs-seq PUSH=1 ./containers/build.sh
+```
+
+Then run on the cluster:
+
+```bash
+nextflow run main.nf -profile apptainer,slurm -resume \
+    --container_registry ghcr.io/my-org/ngs-seq \
+    --apptainer_cachedir /mnt/gbi-shared/apptainer_cache \
+    --partition compute \
+    --clusteropts '--account=gbi' \
+    --samplesheet ... --reads_dir ... --ref_dir ... --publish_dir ... --analysis_name ...
+```
+
+Alternatively, `-profile conda,slurm` skips containers entirely and uses conda on the nodes.
+
+#### Cluster parameters
+
+| Parameter              | Default | Description                                                        |
+|------------------------|---------|--------------------------------------------------------------------|
+| `--container_registry` | `ngs-seq` | Registry/namespace the images are pulled from (must be cluster-reachable) |
+| `--apptainer_cachedir` | _(none)_ | Shared dir where pulled `.sif` images are cached and reused across nodes |
+| `--apptainer_bind`     | _(none)_ | Extra bind path(s) into containers, e.g. a shared mount (comma-separated) |
+| `--partition`          | _(none)_ | Slurm partition/queue (omit to use the cluster default)            |
+| `--clusteropts`        | _(none)_ | Extra options appended to every `sbatch`, e.g. `--account=gbi --qos=normal` |
+
 ### Required parameters
 
 | Parameter         | Description                                      |
