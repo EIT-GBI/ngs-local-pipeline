@@ -12,7 +12,8 @@ include { FAIDX_INDEX               } from './modules/local/faidx_index'
 include { SAMTOOLS_STATS            } from './modules/local/samtools_stats'
 include { SAMTOOLS_COVERAGE         } from './modules/local/samtools_coverage'
 include { BCFTOOLS_STATS            } from './modules/local/bcftools_stats'
-include { BIGWIG                    } from './modules/local/bigwig'
+include { BEDTOOLS_GENOMECOV        } from './modules/local/bedtools_genomecov'
+include { BEDGRAPH_TO_BIGWIG        } from './modules/local/bedgraph_to_bigwig'
 include { CHROM_SIZES               } from './modules/local/chrom_sizes'
 include { MULTIQC                   } from './modules/local/multiqc'
 include { PARSE_ALIGNMENT_LOG       } from './modules/local/parse_alignment_log'
@@ -104,14 +105,16 @@ workflow {
         .map { meta, bam, bai -> tuple(meta.ref_genome, meta, bam, bai) }
         .combine(ch_faidx_ref, by: 0)
 
-    // BigWig coverage track
-    ch_bam_with_chrom_sizes = ALIGNMENT_BWA.out.bam_bai
-        .map { meta, bam, bai -> tuple(meta.ref_genome, meta, bam, bai) }
+    // BigWig coverage track (two steps: bedtools genomecov -> bedGraphToBigWig)
+    BEDTOOLS_GENOMECOV(ALIGNMENT_BWA.out.bam_bai)
+
+    ch_bedgraph_with_chrom_sizes = BEDTOOLS_GENOMECOV.out.bedgraph
+        .map { meta, bedgraph -> tuple(meta.ref_genome, meta, bedgraph) }
         .combine(ch_chrom_sizes, by: 0)
 
-    BIGWIG(
-        ch_bam_with_chrom_sizes.map { _ref_name, meta, bam, bai, _chrom_sizes -> tuple(meta, bam, bai) },
-        ch_bam_with_chrom_sizes.map { _ref_name, _meta, _bam, _bai, chrom_sizes -> chrom_sizes }
+    BEDGRAPH_TO_BIGWIG(
+        ch_bedgraph_with_chrom_sizes.map { _ref_name, meta, bedgraph, _chrom_sizes -> tuple(meta, bedgraph) },
+        ch_bedgraph_with_chrom_sizes.map { _ref_name, _meta, _bedgraph, chrom_sizes -> chrom_sizes }
     )
 
     // Variant calling
@@ -166,8 +169,8 @@ workflow {
         .mix(FLAGSTAT.out.versions_samtools.first())
         .mix(VARIANT_CALLING_FILTERING.out.versions_bcftools.first())
         .mix(BCF2VCF.out.versions_tabix.first())
-        .mix(BIGWIG.out.versions_bedtools.first())
-        .mix(BIGWIG.out.versions_bedgraphtobigwig.first())
+        .mix(BEDTOOLS_GENOMECOV.out.versions_bedtools.first())
+        .mix(BEDGRAPH_TO_BIGWIG.out.versions_bedgraphtobigwig.first())
         .map { _process_name, tool, version -> "${tool}\t${version}" }
         .collect()
     COLLECT_VERSIONS(ch_versions)
@@ -192,7 +195,7 @@ workflow {
     ch_samtools_stats       = SAMTOOLS_STATS.out.stats
     ch_samtools_coverage    = SAMTOOLS_COVERAGE.out.coverage
     ch_bcftools_stats       = BCFTOOLS_STATS.out.stats
-    ch_bigwig               = BIGWIG.out.bigwig
+    ch_bigwig               = BEDGRAPH_TO_BIGWIG.out.bigwig
     ch_consensus            = BCF_CONSENSUS.out.consensus
     ch_multiqc_report       = MULTIQC.out.report
     ch_multiqc_data         = MULTIQC.out.data

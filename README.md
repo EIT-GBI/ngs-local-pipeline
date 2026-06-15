@@ -36,12 +36,13 @@ FASTQC (raw) → FASTP (trimming) → FASTQC (trimmed) → BWA MEM (alignment + 
 ## Requirements
 
 - [Nextflow](https://www.nextflow.io/) (>= 22.10)
-- **Either** Conda **or** Docker for dependency management (pick a profile when running)
+- A dependency runtime — **Conda**, **Docker**, or **Apptainer** (pick a profile when running)
 
 No manual tool installation needed. Every tool (FastQC, fastp, BWA, samtools, bcftools,
 bedtools, ucsc-bedGraphToBigWig, MultiQC) is provided through:
 - conda environments (`-profile conda`), managed automatically via `conf/modules.config`, or
-- Docker images (`-profile docker`), one per tool — see [Docker](#docker).
+- public container images (`-profile docker` / `-profile apptainer`), pulled directly from
+  public registries — see [Containers](#containers). No building or pushing required.
 
 ## Input
 
@@ -69,22 +70,19 @@ nextflow run main.nf -profile conda -resume \
 
 Results will be published to `/path/to/output/my_analysis/`.
 
-### Docker
+### Containers
 
-The pipeline ships one Docker image per tool, built from the same pinned versions as the
-conda specs. Dockerfiles live under `containers/<tool>/`, plus a small `base` image for the
-label-less helper steps.
+Container images are pulled directly from public registries — nothing to build or push.
+Each process label maps to an image in `conf/modules.config`:
 
-**1. Build the images** (one-time, or whenever a tool version changes):
+- single-tool steps → `quay.io/biocontainers/...` at the exact pinned versions
+- alignment (BWA + samtools in one image) → nf-core's public Seqera Wave image
+  `community.wave.seqera.io/library/bwa_htslib_samtools` (bwa 0.7.19 / samtools 1.22.1)
+- the BigWig step is split into `bedtools genomecov` and `bedGraphToBigWig`, so each uses
+  its own single-tool biocontainer
+- label-less helper steps use `quay.io/nf-core/ubuntu:22.04` (`params.base_container`)
 
-```bash
-./containers/build.sh
-```
-
-This tags the images under the `ngs-seq/` namespace (e.g. `ngs-seq/fastqc:0.12.1`), matching
-`params.container_registry` in `nextflow.config`.
-
-**2. Run with the docker profile:**
+**Run locally with Docker:**
 
 ```bash
 nextflow run main.nf -profile docker -resume \
@@ -95,48 +93,33 @@ nextflow run main.nf -profile docker -resume \
     --analysis_name my_analysis
 ```
 
-**Remote registry (e.g. GHCR).** To build, push, and run against a remote registry:
-
-```bash
-REGISTRY=ghcr.io/my-org/ngs-seq PUSH=1 ./containers/build.sh
-nextflow run main.nf -profile docker --container_registry ghcr.io/my-org/ngs-seq ...
-```
-
 ### HPC cluster (Apptainer + Slurm)
 
 On the cluster, dependencies run via **Apptainer** and jobs are submitted through **Slurm**.
-The `apptainer` and `slurm` profiles are composable — combine them with `-profile apptainer,slurm`.
-
-Apptainer can't see images in a local Docker daemon, so it pulls each image via `docker://`
-from `--container_registry`. **That registry must be reachable from the cluster and already
-contain the images**, so build/push them first (from a machine with Docker):
-
-```bash
-REGISTRY=ghcr.io/my-org/ngs-seq PUSH=1 ./containers/build.sh
-```
-
-Then run on the cluster:
+The `apptainer` and `slurm` profiles are composable. Apptainer pulls each public image via
+`docker://` and caches the `.sif` files — point `--apptainer_cachedir` at shared storage so
+all nodes reuse them.
 
 ```bash
 nextflow run main.nf -profile apptainer,slurm -resume \
-    --container_registry ghcr.io/my-org/ngs-seq \
     --apptainer_cachedir /mnt/gbi-shared/apptainer_cache \
     --partition compute \
     --clusteropts '--account=gbi' \
     --samplesheet ... --reads_dir ... --ref_dir ... --publish_dir ... --analysis_name ...
 ```
 
-Alternatively, `-profile conda,slurm` skips containers entirely and uses conda on the nodes.
+Alternatively, `-profile conda,slurm` skips containers and uses conda on the nodes (requires
+conda to be available on the compute nodes, not just the login node).
 
 #### Cluster parameters
 
 | Parameter              | Default | Description                                                        |
 |------------------------|---------|--------------------------------------------------------------------|
-| `--container_registry` | `ngs-seq` | Registry/namespace the images are pulled from (must be cluster-reachable) |
 | `--apptainer_cachedir` | _(none)_ | Shared dir where pulled `.sif` images are cached and reused across nodes |
 | `--apptainer_bind`     | _(none)_ | Extra bind path(s) into containers, e.g. a shared mount (comma-separated) |
 | `--partition`          | _(none)_ | Slurm partition/queue (omit to use the cluster default)            |
 | `--clusteropts`        | _(none)_ | Extra options appended to every `sbatch`, e.g. `--account=gbi --qos=normal` |
+| `--base_container`     | `quay.io/nf-core/ubuntu:22.04` | Image for label-less script-only steps        |
 
 ### Required parameters
 
@@ -163,8 +146,6 @@ main.nf                        # Workflow definition and channel wiring
 modules/local/<tool>/main.nf   # One process per module
 conf/modules.config            # Conda envs, container images, and process labels
 nextflow.config                # Params and profiles (standard / conda / docker)
-containers/<tool>/Dockerfile   # One image per tool (mirrors the conda specs)
-containers/build.sh            # Build/push helper for the Docker images
 assets/samplesheet.csv         # Example samplesheet for testing
 assets/multiqc_config.yaml     # MultiQC report customisation
 ```

@@ -30,7 +30,7 @@ BCF2VCF + BCF2CSV + BCF_CONSENSUS → MULTIQC
 ## Running
 ```
 nextflow run main.nf -profile conda -resume               # conda environments (local)
-nextflow run main.nf -profile docker -resume              # Docker images, local (build first: ./containers/build.sh)
+nextflow run main.nf -profile docker -resume              # public container images (local)
 nextflow run main.nf -profile apptainer,slurm -resume     # HPC cluster (Apptainer + Slurm)
 ```
 
@@ -40,11 +40,11 @@ nextflow run main.nf -profile apptainer,slurm -resume     # HPC cluster (Apptain
 - `slurm` profile: `process.queue = { params.partition }`, `process.clusterOptions = { params.clusteropts }` (closures, null = cluster default)
 
 ## Containers
-- Each conda label has a matching `container` in `conf/modules.config`; tags mirror the pinned versions
-- Dockerfiles live in `containers/<label>/` (micromamba base, installs the same bioconda spec)
-- `containers/base/` is the default image for label-less script steps (CHROM_SIZES, PARSE_ALIGNMENT_LOG)
-- `params.container_registry` (default `ngs-seq`) prefixes all image tags; build/push via `containers/build.sh` (REGISTRY/PUSH env vars)
-- Apptainer auto-pulls each container via `docker://`, so on the cluster `--container_registry` MUST be a reachable registry with the images already pushed
+- Images are pulled directly from PUBLIC registries — no building or pushing (no `containers/` dir)
+- Each label has a `container` in `conf/modules.config`: single tools → `quay.io/biocontainers/...` (exact versions)
+- Alignment (`bwa_samtools` label) uses nf-core's public Wave image `community.wave.seqera.io/library/bwa_htslib_samtools` (bwa 0.7.19 / samtools 1.22.1 — not the pinned 0.7.18/1.20, since no public image has the exact combo)
+- BigWig was split into `BEDTOOLS_GENOMECOV` (label `bedtools`) + `BEDGRAPH_TO_BIGWIG` (label `ucsc_bedgraphtobigwig`) so each uses a single-tool biocontainer (old combined `bigwig` module/label removed)
+- Label-less script steps (CHROM_SIZES, PARSE_ALIGNMENT_LOG) use `params.base_container` (`quay.io/nf-core/ubuntu:22.04`)
 - Strict Nextflow config grammar: no `if` statements in config — use closures (`{ params.x }`) for param-driven directives
 
 ## Gotchas
