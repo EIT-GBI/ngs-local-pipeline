@@ -15,4 +15,10 @@ process BCF_CONSENSUS {
     """
     bcftools consensus -f ${ref_genome} ${bcf} > ${prefix}.consensus.fna
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    printf '>%s\nACGTACGTACGTACGTACGT\n' "${prefix}" > ${prefix}.consensus.fna
+    """
 }

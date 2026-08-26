@@ -14,4 +14,10 @@ process BCFTOOLS_STATS {
     """
     bcftools stats ${bcf} > ${prefix}.bcftools_stats.txt
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    printf 'SN\t0\tnumber of records:\t3\nSN\t0\tnumber of SNPs:\t3\n' > ${prefix}.bcftools_stats.txt
+    """
 }

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# eval: samtools --version | head -1 | sed "s/samtools //"   (and, no args, "^Version: ")
+if [ "$1" = "--version" ]; then
+    echo "samtools 1.20-stub"
+else
+    echo "Version: 1.20-stub" >&2
+fi

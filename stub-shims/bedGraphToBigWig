@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# eval: bedGraphToBigWig 2>&1 | head -1 | sed "s/bedGraphToBigWig v //; s/ .*//"
+# Note the space in "v 482": the module's sed matches "bedGraphToBigWig v ".
+echo "bedGraphToBigWig v 482-stub - Convert a bedGraph file to bigWig format." >&2

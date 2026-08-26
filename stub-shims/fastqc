@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# eval: fastqc --version | sed "/FastQC v/!d; s/.*v//"
+echo "FastQC v0.12.1-stub"

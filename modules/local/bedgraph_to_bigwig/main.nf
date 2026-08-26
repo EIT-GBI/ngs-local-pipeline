@@ -15,4 +15,10 @@ process BEDGRAPH_TO_BIGWIG {
     """
     bedGraphToBigWig ${bedgraph} ${chrom_sizes} ${prefix}.bw
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.bw
+    """
 }

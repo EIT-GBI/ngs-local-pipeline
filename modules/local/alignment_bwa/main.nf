@@ -25,4 +25,21 @@ process ALIGNMENT_BWA {
        -o ${prefix}.sorted.bam - >>${prefix}.alignment.log 2>&1
     samtools index -@ $task.cpus ${prefix}.sorted.bam >>${prefix}.alignment.log 2>&1
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.sorted.bam ${prefix}.sorted.bam.bai
+    # A realistic BWA mem log, not an empty file: PARSE_ALIGNMENT_LOG has no stub
+    # of its own (it is pure awk/sed), so under `-stub-run` it parses this for
+    # real — which is what keeps its regexes honest.
+    cat > ${prefix}.alignment.log <<'LOG'
+[M::mem_process_seqs] Processed 20000 reads in 1.234 CPU sec, 0.567 real sec
+[M::mem_pestat] analyzing insert size distribution for orientation FR...
+[M::mem_pestat] (25, 50, 75) percentile: (180, 250, 320)
+[M::mem_pestat] mean and std.dev: (251.30, 45.20)
+[M::mem_pestat] analyzing insert size distribution for orientation RF...
+[main] Real time: 0.600 sec; CPU: 1.300 sec
+LOG
+    """
 }

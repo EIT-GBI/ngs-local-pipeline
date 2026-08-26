@@ -35,4 +35,11 @@ process FASTQC {
         --memory ${fastqc_memory} \\
         ${reads}
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}_R1_fastqc.html ${prefix}_R1_fastqc.zip
+    touch ${prefix}_R2_fastqc.html ${prefix}_R2_fastqc.zip
+    """
 }

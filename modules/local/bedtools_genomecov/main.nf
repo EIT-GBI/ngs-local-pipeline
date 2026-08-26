@@ -16,4 +16,10 @@ process BEDTOOLS_GENOMECOV {
     bedtools genomecov -ibam ${bam} -bg \\
         | sort -k1,1 -k2,2n > ${prefix}.bedgraph
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    printf 'stub_chr\t0\t1000\t25\n' > ${prefix}.bedgraph
+    """
 }

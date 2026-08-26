@@ -22,4 +22,10 @@ process BCF2CSV {
     mv ${prefix}.calls.csv.tmp ${prefix}.calls.csv
     """
 
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    printf 'CHROM,POS,REF,ALT,DP,AD(ref,alt),QUAL,FILTER\n' > ${prefix}.calls.csv
+    """
 }

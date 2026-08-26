@@ -17,4 +17,11 @@ process BCF2VCF {
     bcftools view -Oz -o ${prefix}.calls.vcf.gz ${bcf} >>${prefix}.vcf.log 2>&1
     tabix -p vcf ${prefix}.calls.vcf.gz >>${prefix}.vcf.log 2>&1
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.calls.vcf.gz ${prefix}.calls.vcf.gz.tbi
+    echo "stub" > ${prefix}.vcf.log
+    """
 }

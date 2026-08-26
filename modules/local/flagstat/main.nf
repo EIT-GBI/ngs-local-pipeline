@@ -14,4 +14,10 @@ process FLAGSTAT{
     """
     samtools flagstat ${bam} > ${prefix}.flagstat.txt
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    printf '20000 + 0 in total (QC-passed reads + QC-failed reads)\n19500 + 0 mapped (97.50%% : N/A)\n' > ${prefix}.flagstat.txt
+    """
 }

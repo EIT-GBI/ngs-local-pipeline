@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# eval: bwa 2>&1 | sed -n "s/^Version: //p"
+echo "Version: 0.7.18-stub" >&2

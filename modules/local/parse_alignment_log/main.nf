@@ -21,8 +21,8 @@ process PARSE_ALIGNMENT_LOG {
     fr_block=\$(awk '/orientation FR/{fr=1; next} /orientation [A-Z][A-Z]/{fr=0} fr' "${alignment_log}")
 
     insert_median=\$(echo "\${fr_block}" | awk '/percentile:/{gsub(/.*\\(/, ""); split(\$0, a, ","); gsub(/ /, "", a[2]); print a[2]+0; exit}')
-    insert_mean=\$(echo "\${fr_block}"   | awk '/mean and std/{gsub(/.*\\(/, ""); sub(/,.*/, ""); print+0; exit}')
-    insert_std=\$(echo "\${fr_block}"    | awk '/mean and std/{gsub(/.*,[ ]*/, ""); sub(/\\).*/, ""); print+0; exit}')
+    insert_mean=\$(echo "\${fr_block}"   | awk '/mean and std/{gsub(/.*\\(/, ""); sub(/,.*/, ""); print \$0+0; exit}')
+    insert_std=\$(echo "\${fr_block}"    | awk '/mean and std/{gsub(/.*,[ ]*/, ""); sub(/\\).*/, ""); print \$0+0; exit}')
 
     # Fall back to NA if any value is empty (e.g. failed run)
     total_reads=\${total_reads:-NA}

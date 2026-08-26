@@ -14,4 +14,10 @@ process SAMTOOLS_STATS {
     """
     samtools stats ${bam} > ${prefix}.stats
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    printf 'SN\traw total sequences:\t20000\nSN\treads mapped:\t19500\n' > ${prefix}.stats
+    """
 }

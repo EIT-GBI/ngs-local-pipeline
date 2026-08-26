@@ -34,4 +34,11 @@ process VARIANT_CALLING_FILTERING {
 
     bcftools index ${prefix}.calls.bcf >>${prefix}.variantcalling.log 2>&1
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.calls.bcf ${prefix}.calls.bcf.csi
+    echo "stub" > ${prefix}.variantcalling.log
+    """
 }

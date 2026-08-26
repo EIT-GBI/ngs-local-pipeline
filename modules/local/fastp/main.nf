@@ -31,4 +31,14 @@ process FASTP {
     $args \\
     2> >(tee ${prefix}.fastp.log >&2)
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    echo | gzip -c > ${prefix}_R1.trimmed.fastq.gz
+    echo | gzip -c > ${prefix}_R2.trimmed.fastq.gz
+    printf '{"summary":{"before_filtering":{"total_reads":20000},"after_filtering":{"total_reads":19500}}}\n' > ${prefix}.fastp.json
+    touch ${prefix}.fastp.html
+    echo "stub" > ${prefix}.fastp.log
+    """
 }

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# eval: multiqc --version | sed "s/.* //g"
+echo "multiqc, version 1.33-stub"

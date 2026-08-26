@@ -13,4 +13,12 @@ process FAIDX_INDEX {
     """
     samtools faidx $ref_genome
     """
+
+    stub:
+    """
+    # A real .fai: CHROM_SIZES has no stub (it is a plain `cut`) and consumes
+    # this for real, so the seqid must come from the actual reference.
+    seqid=\$(grep '^>' ${ref_genome} | head -1 | sed 's/^>//; s/[[:space:]].*//')
+    printf '%s\t1000\t%s\t60\t61\n' "\${seqid:-stub_chr}" "\$(( \${#seqid} + 2 ))" > ${ref_genome}.fai
+    """
 }
