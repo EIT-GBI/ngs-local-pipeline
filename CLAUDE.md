@@ -81,6 +81,17 @@ out to a tool has a `stub:` block; `CHROM_SIZES` (a plain `cut`),
 deliberately have none, so they run for real and their parsing stays honest — the
 `ALIGNMENT_BWA` stub therefore writes a realistic BWA log rather than an empty one.
 
+Static checks:
+
+```bash
+nextflow lint . -exclude nf-test.config
+```
+
+The exclude is required: `nf-test.config` is nf-test's own DSL, not Nextflow
+config, so `nextflow lint` mis-parses it and reports a false error. Editing it to
+satisfy the linter would break nf-test. Expect zero warnings otherwise — declare
+closure parameters explicitly, since the implicit `it` is deprecated.
+
 **`-profile stub` is not optional.** Every module declares `eval(...)` version
 outputs, and Nextflow runs those commands even when a `stub:` block replaces the
 script — a missing tool fails the task with "Unable to evaluate output" (exit
