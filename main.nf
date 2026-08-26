@@ -29,12 +29,21 @@ workflow {
         def id = row.sample_id
         def ref_genome = row.ref_genome
 
-        def r1 = files("${params.reads_dir}/${id}*_R1*.fastq.gz", checkIfExists: true)
-        def r2 = files("${params.reads_dir}/${id}*_R2*.fastq.gz", checkIfExists: true)
+        // FASTQs sit either flat in --reads_dir (Illumina bcl-convert, e.g.
+        // `<id>_S17_R1_001.fastq.gz`) or in a per-sample subdirectory named after
+        // the sample (Element AVITI / Bases2Fastq, `<id>/<id>_R1.fastq.gz`). A `*`
+        // glob does not cross `/`, so no single pattern covers both — try flat
+        // first, then the subdirectory.
+        def find_mate = { String mate ->
+            files("${params.reads_dir}/${id}*_${mate}*.fastq.gz")
+                ?: files("${params.reads_dir}/${id}/*_${mate}*.fastq.gz")
+        }
+        def r1 = find_mate('R1')
+        def r2 = find_mate('R2')
         def ref = file("${params.ref_dir}/${ref_genome}", checkIfExists: true)
 
         if( r1.size() != 1 || r2.size() != 1 ) {
-            throw new IllegalArgumentException("Expected exactly one R1 and one R2 FASTQ for sample `${id}` but found ${r1.size()} R1 and ${r2.size()} R2 files")
+            throw new IllegalArgumentException("Expected exactly one R1 and one R2 FASTQ for sample `${id}` but found ${r1.size()} R1 and ${r2.size()} R2 files. Searched ${params.reads_dir} for `${id}*_R1*.fastq.gz` and `${id}/*_R1*.fastq.gz` (and the R2 equivalents)")
         }
 
         def meta = [

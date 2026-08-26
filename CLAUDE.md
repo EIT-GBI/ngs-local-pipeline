@@ -21,6 +21,10 @@ BCF2VCF + BCF2CSV + BCF_CONSENSUS → MULTIQC
 - run_pipeline.sh — legacy bash version (kept for reference)
 
 ## Key conventions
+- Reads are resolved from `--reads_dir` by glob, trying flat (`<id>*_R1*.fastq.gz`,
+  Illumina bcl-convert) then a per-sample subdirectory (`<id>/*_R1*.fastq.gz`,
+  Element AVITI / Bases2Fastq). A `*` glob does not cross `/`, so both patterns are
+  needed; exactly one R1 and one R2 must match, so lane-split FASTQs are rejected
 - Each module uses process labels for conda env assignment (e.g. `label 'bcftools'`)
 - Samples can use different reference genomes — refs are deduplicated before indexing
 - Workflow `output {}` block handles publishing (not `publishDir` in modules)
