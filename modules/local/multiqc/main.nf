@@ -5,6 +5,14 @@ process MULTIQC {
     input:
     path multiqc_files, stageAs: "?/*"
     path multiqc_config, stageAs: "?/*"
+    // Renames the report. Empty (the standalone default) leaves MultiQC's own
+    // `multiqc_report.html`. A parent pipeline that includes this workflow more
+    // than once must pass a distinct value per instance — two invocations
+    // otherwise emit the same basename and collide when a downstream process
+    // stages both. It is an input rather than `ext.prefix` because a config
+    // selector for a process that only exists in one of the caller's modes warns
+    // on every run of the other mode.
+    val report_prefix
 
     output:
     path "*multiqc_report.html", emit: report
@@ -18,12 +26,7 @@ process MULTIQC {
     script:
     def args   = task.ext.args ?: ''
     def config = multiqc_config ? "--config ${multiqc_config}" : ''
-    // ext.prefix renames the report. Unset (the standalone default) leaves
-    // MultiQC's own `multiqc_report.html`, so behaviour is unchanged. A parent
-    // pipeline that includes this workflow more than once sets it per instance —
-    // two invocations otherwise emit the same basename and collide when a
-    // downstream process stages both.
-    def rename = task.ext.prefix ? "--filename ${task.ext.prefix}_multiqc_report.html" : ''
+    def rename = report_prefix ? "--filename ${report_prefix}_multiqc_report.html" : ''
     """
     multiqc \\
         --force \\
@@ -34,7 +37,7 @@ process MULTIQC {
     """
 
     stub:
-    def report = task.ext.prefix ? "${task.ext.prefix}_multiqc_report.html" : 'multiqc_report.html'
+    def report = report_prefix ? "${report_prefix}_multiqc_report.html" : 'multiqc_report.html'
     def data   = report - '.html'
     """
     touch ${report}

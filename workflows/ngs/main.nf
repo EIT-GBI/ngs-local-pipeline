@@ -53,6 +53,7 @@ workflow NGS {
     min_qmap       // val: minimum mapping quality for variant calling
     min_depth      // val: minimum depth for variant filtering
     min_qual       // val: minimum variant quality
+    multiqc_prefix // val: renames the MultiQC report; '' keeps the default name
 
     main:
     // moduleDir, NOT projectDir: when this workflow is included by a parent
@@ -216,7 +217,8 @@ workflow NGS {
 
     MULTIQC(
         ch_multiqc_files.collect(),
-        ch_multiqc_config
+        ch_multiqc_config,
+        multiqc_prefix
     )
 
     emit:

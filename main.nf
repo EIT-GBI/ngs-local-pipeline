@@ -19,7 +19,10 @@ workflow {
         params.ref_dir,
         params.min_qmap,
         params.min_depth,
-        params.min_qual
+        params.min_qual,
+        // A standalone run has only one MultiQC report, so it keeps the default
+        // name. Only a parent including NGS more than once needs to rename it.
+        ''
     )
 
     publish:
