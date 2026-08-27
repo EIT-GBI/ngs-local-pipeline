@@ -70,6 +70,13 @@ Alternatively, download the binary and place it in the `tools/ucsc` directory of
 
 ## :cloud: Installation on Cluster -> Ubuntu 22.04 LTS
 
+Clone the repository locally to the directory where you want your code to be.
+
+```bash
+git clone https://github.com/EIT-GBI/ngs-seq-local-pipeline.git
+cd ngs-seq-local-pipeline
+```
+
 We are going to use Spack to install the required tools on the cluster. A description of how to use Spack is available at the link below, but we'll try to abstract away the details and just give you the commands to run to get the tools installed - https://spack.readthedocs.io/en/latest/getting_started.html.
 
 First, clone the Spack repository and set it up:
